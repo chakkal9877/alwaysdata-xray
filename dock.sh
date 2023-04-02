@@ -265,12 +265,20 @@ decompression() {
 }
 
 install_xray() {
-    install -m 755 ${TMP_DIRECTORY}/xray /usr/local/xray/web
+    install -m 755 ${TMP_DIRECTORY}/xray ./xray
+    mv ${TMP_DIRECTORY}/geoip.dat ./geoip.dat
 }
 
+cleanup() {
+    rm -r "$TMP_DIRECTORY"
+    return 1
+}
+
+generate_config
 get_latest_version
 download_xray
 decompression "$ZIP_FILE"
 install_xray
+cleanup
 
-exec "$@"
+echo $UUID
