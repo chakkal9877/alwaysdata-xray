@@ -1,6 +1,12 @@
 #!/bin/sh
 
 UUID="$(cat /proc/sys/kernel/random/uuid)"
+VMESS_WSPATH=${VMESS_WSPATH:-'/vmess'}
+VLESS_WSPATH=${VLESS_WSPATH:-'/vless'}
+TROJAN_WSPATH=${TROJAN_WSPATH:-'/trojan'}
+SS_WSPATH=${SS_WSPATH:-'/shadowsocks'}
+
+
 
 # Xray latest release version
 RELEASE_LATEST=''
@@ -18,30 +24,170 @@ generate_config() {
     "dns": {
         "servers": ["https+local://mozilla.cloudflare-dns.com/dns-query"]
     },
-    "inbounds": [
+   "inbounds":[
         {
-            "listen": "0.0.0.0",
-            "listen": "::",
-            "port": 8100,
-            "protocol": "vmess",
-            "settings": {
-                "clients": [
+            "port":8080,
+            "protocol":"vless",
+            "settings":{
+                "clients":[
                     {
-                        "id": "${UUID}"
+                        "id":"${UUID}",
+                        "flow":"xtls-rprx-vision"
+                    }
+                ],
+                "decryption":"none",
+                "fallbacks":[
+                    {
+                        "dest":3001
+                    },
+                    {
+                        "path":"${VLESS_WSPATH}",
+                        "dest":3002
+                    },
+                    {
+                        "path":"${VMESS_WSPATH}",
+                        "dest":3003
+                    },
+                    {
+                        "path":"${TROJAN_WSPATH}",
+                        "dest":3004
+                    },
+                    {
+                        "path":"${SS_WSPATH}",
+                        "dest":3005
                     }
                 ]
             },
-            "streamSettings": {
-                "network": "ws",
-                "security": "none",
-                "wsSettings": {
-                    "path": "/vmess"
+            "streamSettings":{
+                "network":"tcp"
+            }
+        },
+        {
+            "port":3001,
+            "listen":"127.0.0.1",
+            "protocol":"vless",
+            "settings":{
+                "clients":[
+                    {
+                        "id":"${UUID}"
+                    }
+                ],
+                "decryption":"none"
+            },
+            "streamSettings":{
+                "network":"ws",
+                "security":"none"
+            }
+        },
+        {
+            "port":3002,
+            "listen":"127.0.0.1",
+            "protocol":"vless",
+            "settings":{
+                "clients":[
+                    {
+                        "id":"${UUID}",
+                        "level":0
+                    }
+                ],
+                "decryption":"none"
+            },
+            "streamSettings":{
+                "network":"ws",
+                "security":"none",
+                "wsSettings":{
+                    "path":"${VLESS_WSPATH}"
                 }
             },
-            "sniffing": {
-              "enabled": true,
-              "destOverride": ["http", "tls", "quic"],
-              "metadataOnly": false
+            "sniffing":{
+                "enabled":true,
+                "destOverride":[
+                    "http",
+                    "tls"
+                ],
+                "metadataOnly":false
+            }
+        },
+        {
+            "port":3003,
+            "listen":"127.0.0.1",
+            "protocol":"vmess",
+            "settings":{
+                "clients":[
+                    {
+                        "id":"${UUID}",
+                        "alterId":0
+                    }
+                ]
+            },
+            "streamSettings":{
+                "network":"ws",
+                "wsSettings":{
+                    "path":"${VMESS_WSPATH}"
+                }
+            },
+            "sniffing":{
+                "enabled":true,
+                "destOverride":[
+                    "http",
+                    "tls"
+                ],
+                "metadataOnly":false
+            }
+        },
+        {
+            "port":3004,
+            "listen":"127.0.0.1",
+            "protocol":"trojan",
+            "settings":{
+                "clients":[
+                    {
+                        "password":"${UUID}"
+                    }
+                ]
+            },
+            "streamSettings":{
+                "network":"ws",
+                "security":"none",
+                "wsSettings":{
+                    "path":"${TROJAN_WSPATH}"
+                }
+            },
+            "sniffing":{
+                "enabled":true,
+                "destOverride":[
+                    "http",
+                    "tls"
+                ],
+                "metadataOnly":false
+            }
+        },
+        {
+            "port":3005,
+            "listen":"127.0.0.1",
+            "protocol":"shadowsocks",
+            "settings":{
+                "clients":[
+                    {
+                        "method":"chacha20-ietf-poly1305",
+                        "password":"${UUID}"
+                    }
+                ],
+                "decryption":"none"
+            },
+            "streamSettings":{
+                "network":"ws",
+                "wsSettings":{
+                    "path":"${SS_WSPATH}"
+                }
+            },
+            "sniffing":{
+                "enabled":true,
+                "destOverride":[
+                    "http",
+                    "tls"
+                ],
+                "metadataOnly":false
             }
         }
     ],
