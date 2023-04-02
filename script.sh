@@ -2,7 +2,6 @@
 
 UUID="$(cat /proc/sys/kernel/random/uuid)"
 
-
 # Xray latest release version
 RELEASE_LATEST=''
 
@@ -10,218 +9,56 @@ RELEASE_LATEST=''
 TMP_DIRECTORY="$(mktemp -d)"
 ZIP_FILE="${TMP_DIRECTORY}/web.zip"
 
-
 generate_config() {
   cat > config.json << EOF
-
 {
-  "log": {
+    "log": {
         "loglevel": "none"
     },
     "dns": {
         "servers": ["https+local://mozilla.cloudflare-dns.com/dns-query"]
     },
-
-  "inbounds": [
-    {   
-	"listen": "0.0.0.0",
+    "inbounds": [
+        {
+            "listen": "0.0.0.0",
             "listen": "::",
-      "port": 8100,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "${UUID}",
-            "flow": "xtls-rprx-direct"
-          }
-        ],
-        "decryption": "none",
-        "fallbacks": [
-          {
-            "dest": 9999
-          },
-          {
-            "path": "/vl",
-            "dest": 20000
-          },
-          {
-            "path": "/vm",
-            "dest": 10000
-          },
-          {
-            "path": "/tr",
-            "dest": 30000
-          },
-          {
-            "path": "/ss",
-            "dest": 40000
-          },
-          {
-            "path": "/so",
-            "dest": 50000
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp"
-      }
-    },
-    {
-      "port": 9999,
-      "listen": "127.0.0.1",
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "${UUID}"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "ws",
-        "security": "none"
-      }
-    },
-    {
-      "port": 8100,
-      "listen": "0.0.0.0",
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "${UUID}"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "ws",
-        "security": "none",
-        "wsSettings": {
-          "path": "/vl"
+            "port": 8100,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "${UUID}"
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "path": "/vmess"
+                }
+            },
+            "sniffing": {
+              "enabled": true,
+              "destOverride": ["http", "tls", "quic"],
+              "metadataOnly": false
+            }
         }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": ["http", "tls", "quic"],
-        "metadataOnly": false
-      }
-    },
-    {
-      "port": 8100,
-      "listen": "0.0.0.0",
-      "protocol": "vmess",
-      "settings": {
-        "clients": [
-          {
-            "id": "${UUID}"
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "ws",
-        "wsSettings": {
-          "path": "vm"
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom"
         }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": ["http", "tls", "quic"],
-        "metadataOnly": false
-      }
-    },
-    {
-      "port": 8100,
-      "listen": "0.0.0.0",
-      "protocol": "trojan",
-      "settings": {
-        "clients": [
-          {
-            "password": "${UUID}"
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "ws",
-        "security": "none",
-        "wsSettings": {
-          "path": "/tr"
-        }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": ["http", "tls", "quic"],
-        "metadataOnly": false
-      }
-    },
-    {
-      "port": 8100,
-      "listen": "0.0.0.0",
-      "protocol": "shadowsocks",
-      "settings": {
-        "clients": [
-          {
-            "method": "chacha20-ietf-poly1305",
-            "password": "${UUID}"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "ws",
-        "wsSettings": {
-          "path": "/ss"
-        }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": ["http", "tls", "quic"],
-        "metadataOnly": false
-      }
-    },
-    {
-      "port": 8100,
-      "listen": "0.0.0.0",
-      "protocol": "socks",
-      "settings": {
-        "auth": "password",
-        "accounts": [
-          {
-            "user": "uuid",
-            "pass": "uuid"
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "ws",
-        "wsSettings": {
-          "path": "/uuid-so"
-        }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": ["http", "tls", "quic"],
-        "metadataOnly": false
-      }
-    }
-  ],
-  
-  "outbounds": [
-    {
-      "protocol": "freedom"
-    }
-  ]
+    ]
 }
-
-
-
+EOF
+}
 
 get_latest_version() {
     # Get latest release version number
     RELEASE_LATEST="$(curl -IkLs -o ${TMP_DIRECTORY}/NUL -w %{url_effective} https://github.com/XTLS/Xray-core/releases/latest | grep -o "[^/]*$")"
     RELEASE_LATEST="v${RELEASE_LATEST#v}"
-    if [[ -z "$RELEASE_LATEST" ]]; then
+    if [ -z "$RELEASE_LATEST" ]; then
         echo "error: Failed to get the latest release version, please check your network."
         exit 1
     fi
