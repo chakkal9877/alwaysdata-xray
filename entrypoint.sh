@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 UUID="$(cat /proc/sys/kernel/random/uuid)"
 VMESS_WSPATH=${VMESS_WSPATH:-'/vmess'}
@@ -6,13 +6,22 @@ VLESS_WSPATH=${VLESS_WSPATH:-'/vless'}
 TROJAN_WSPATH=${TROJAN_WSPATH:-'/trojan'}
 SS_WSPATH=${SS_WSPATH:-'/shadowsocks'}
 
+
+# Xray latest release version
+RELEASE_LATEST=''
+
+# Two very important variables
+TMP_DIRECTORY="$(mktemp -d)"
+ZIP_FILE="${TMP_DIRECTORY}/web.zip"
+
 generate_config() {
   cat > config.json << EOF
 {
-    "log":{
-        "access":"/dev/null",
-        "error":"/dev/null",
-        "loglevel":"none"
+    "log": {
+        "loglevel": "none"
+    },
+    "dns": {
+        "servers": ["https+local://mozilla.cloudflare-dns.com/dns-query"]
     },
     "inbounds":[
         {
@@ -181,46 +190,11 @@ generate_config() {
             }
         }
     ],
-    "outbounds":[
+    "outbounds": [
         {
-            "protocol":"freedom"
-        },
-        {
-            "tag": "WARP",
-            "protocol": "wireguard",
-            "settings": {
-                "secretKey": "GAl2z55U2UzNU5FG+LW3kowK+BA/WGMi1dWYwx20pWk=",
-                "address": [
-                    "172.16.0.2/32",
-                    "2606:4700:110:8f0a:fcdb:db2f:3b3:4d49/128"
-                ],
-                "peers": [
-                    {
-                        "publicKey": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
-                        "endpoint": "engage.cloudflareclient.com:2408"
-                    }
-                ]
-            }
+            "protocol": "freedom"
         }
-    ],
-    "routing": {
-        "domainStrategy": "AsIs",
-        "rules": [
-            {
-                "type": "field",
-                "domain": [
-                    "domain:openai.com",
-                    "domain:ai.com"
-                ],
-                "outboundTag": "WARP"
-            }
-        ]
-    },
-    "dns":{
-        "servers":[
-            "https+local://8.8.8.8/dns-query"
-        ]
-    }
+    ]
 }
 EOF
 }
