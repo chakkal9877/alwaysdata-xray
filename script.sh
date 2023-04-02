@@ -1,10 +1,6 @@
 #!/bin/sh
 
 UUID="$(cat /proc/sys/kernel/random/uuid)"
-VMESS_WSPATH=${VMESS_WSPATH:-'/vmess'}
-VLESS_WSPATH=${VLESS_WSPATH:-'/vless'}
-TROJAN_WSPATH=${TROJAN_WSPATH:-'/trojan'}
-SS_WSPATH=${SS_WSPATH:-'/shadowsocks'}
 
 
 
@@ -26,171 +22,58 @@ generate_config() {
     },
    "inbounds":[
         {
-            "port":8080,
-            "protocol":"vless",
-            "settings":{
-                "clients":[
+              "listen": "0.0.0.0",
+            "listen": "::",
+            "port": 8100,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
                     {
-                        "id":"${UUID}",
-                        "flow":"xtls-rprx-vision"
-                    }
-                ],
-                "decryption":"none",
-                "fallbacks":[
-                    {
-                        "dest":3001
-                    },
-                    {
-                        "path":"${VLESS_WSPATH}",
-                        "dest":3002
-                    },
-                    {
-                        "path":"${VMESS_WSPATH}",
-                        "dest":3003
-                    },
-                    {
-                        "path":"${TROJAN_WSPATH}",
-                        "dest":3004
-                    },
-                    {
-                        "path":"${SS_WSPATH}",
-                        "dest":3005
+                        "id": "${UUID}"
                     }
                 ]
             },
-            "streamSettings":{
-                "network":"tcp"
-            }
-        },
-        {
-            "port":3001,
-            "listen":"127.0.0.1",
-            "protocol":"vless",
-            "settings":{
-                "clients":[
-                    {
-                        "id":"${UUID}"
-                    }
-                ],
-                "decryption":"none"
-            },
-            "streamSettings":{
-                "network":"ws",
-                "security":"none"
-            }
-        },
-        {
-            "port":3002,
-            "listen":"127.0.0.1",
-            "protocol":"vless",
-            "settings":{
-                "clients":[
-                    {
-                        "id":"${UUID}",
-                        "level":0
-                    }
-                ],
-                "decryption":"none"
-            },
-            "streamSettings":{
-                "network":"ws",
-                "security":"none",
-                "wsSettings":{
-                    "path":"${VLESS_WSPATH}"
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "path": "/vmess"
                 }
             },
-            "sniffing":{
-                "enabled":true,
-                "destOverride":[
-                    "http",
-                    "tls"
-                ],
-                "metadataOnly":false
+            "sniffing": {
+              "enabled": true,
+              "destOverride": ["http", "tls", "quic"],
+              "metadataOnly": false
             }
-        },
-        {
-            "port":3003,
-            "listen":"127.0.0.1",
-            "protocol":"vmess",
-            "settings":{
-                "clients":[
+
+ "listen": "0.0.0.0",
+            "listen": "::",
+            "port": 8100,
+            "protocol": "vless",
+            "settings": {
+                "clients": [
                     {
-                        "id":"${UUID}",
-                        "alterId":0
-                    }
-                ]
-            },
-            "streamSettings":{
-                "network":"ws",
-                "wsSettings":{
-                    "path":"${VMESS_WSPATH}"
-                }
-            },
-            "sniffing":{
-                "enabled":true,
-                "destOverride":[
-                    "http",
-                    "tls"
-                ],
-                "metadataOnly":false
-            }
-        },
-        {
-            "port":3004,
-            "listen":"127.0.0.1",
-            "protocol":"trojan",
-            "settings":{
-                "clients":[
-                    {
-                        "password":"${UUID}"
-                    }
-                ]
-            },
-            "streamSettings":{
-                "network":"ws",
-                "security":"none",
-                "wsSettings":{
-                    "path":"${TROJAN_WSPATH}"
-                }
-            },
-            "sniffing":{
-                "enabled":true,
-                "destOverride":[
-                    "http",
-                    "tls"
-                ],
-                "metadataOnly":false
-            }
-        },
-        {
-            "port":3005,
-            "listen":"127.0.0.1",
-            "protocol":"shadowsocks",
-            "settings":{
-                "clients":[
-                    {
-                        "method":"chacha20-ietf-poly1305",
-                        "password":"${UUID}"
+                        "id": "${UUID}"
                     }
                 ],
-                "decryption":"none"
+            "decryption": "none"
             },
-            "streamSettings":{
-                "network":"ws",
-                "wsSettings":{
-                    "path":"${SS_WSPATH}"
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "path": "/vless"
                 }
             },
-            "sniffing":{
-                "enabled":true,
-                "destOverride":[
-                    "http",
-                    "tls"
-                ],
-                "metadataOnly":false
+            "sniffing": {
+              "enabled": true,
+              "destOverride": ["http", "tls", "quic"],
+              "metadataOnly": false
             }
         }
     ],
+       
+     
     "outbounds":[
         {
             "protocol":"freedom"
@@ -234,7 +117,6 @@ generate_config() {
 }
 EOF
 }
-
 get_latest_version() {
     # Get latest release version number
     RELEASE_LATEST="$(curl -IkLs -o ${TMP_DIRECTORY}/NUL -w %{url_effective} https://github.com/XTLS/Xray-core/releases/latest | grep -o "[^/]*$")"
