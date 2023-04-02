@@ -83,7 +83,8 @@ generate_config() {
     }
   ]
 }
-
+EOF
+}
 
 
 
